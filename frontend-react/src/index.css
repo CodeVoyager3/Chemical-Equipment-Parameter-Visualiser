@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #fdf6e3;
+    --foreground: #073642;
+    --card: #eee8d5;
+    --card-foreground: #073642;
+    --popover: #eee8d5;
+    --popover-foreground: #073642;
+    --primary: #d33682;
+    --primary-foreground: #ffffff;
+    --secondary: #2aa198;
+    --secondary-foreground: #ffffff;
+    --muted: #93a1a1;
+    --muted-foreground: #657b83;
+    --accent: #cb4b16;
+    --accent-foreground: #ffffff;
+    --destructive: #dc322f;
+    --destructive-foreground: #ffffff;
+    --border: #839496;
+    --input: #839496;
+    --ring: #d33682;
+    --chart-1: #268bd2;
+    --chart-2: #2aa198;
+    --chart-3: #d33682;
+    --chart-4: #cb4b16;
+    --chart-5: #dc322f;
+    --sidebar: #fdf6e3;
+    --sidebar-foreground: #073642;
+    --sidebar-primary: #d33682;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #2aa198;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #839496;
+    --sidebar-ring: #d33682;
+    --radius: 0.5rem;
+    --shadow: 2px 2px 4px 0px hsl(196 83% 10% / 0.15), 2px 1px 2px -1px hsl(196 83% 10% / 0.15);
+    --shadow-md: 2px 2px 4px 0px hsl(196 83% 10% / 0.15), 2px 2px 4px -1px hsl(196 83% 10% / 0.15);
+    --shadow-lg: 2px 2px 4px 0px hsl(196 83% 10% / 0.15), 2px 4px 6px -1px hsl(196 83% 10% / 0.15);
+  }
+
+  .dark {
+    --background: #002b36;
+    --foreground: #93a1a1;
+    --card: #073642;
+    --card-foreground: #93a1a1;
+    --popover: #073642;
+    --popover-foreground: #93a1a1;
+    --primary: #d33682;
+    --primary-foreground: #ffffff;
+    --secondary: #2aa198;
+    --secondary-foreground: #ffffff;
+    --muted: #586e75;
+    --muted-foreground: #93a1a1;
+    --accent: #cb4b16;
+    --accent-foreground: #ffffff;
+    --destructive: #dc322f;
+    --destructive-foreground: #ffffff;
+    --border: #586e75;
+    --input: #586e75;
+    --ring: #d33682;
+    --chart-1: #268bd2;
+    --chart-2: #2aa198;
+    --chart-3: #d33682;
+    --chart-4: #cb4b16;
+    --chart-5: #dc322f;
+    --sidebar: #002b36;
+    --sidebar-foreground: #93a1a1;
+    --sidebar-primary: #d33682;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #2aa198;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #586e75;
+    --sidebar-ring: #d33682;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Outfit', sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  code,
+  pre,
+  .font-mono {
+    font-family: 'Space Mono', monospace;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--chart-1) 100%);
+  }
+
+  .glass {
+    backdrop-filter: blur(10px);
+    background: rgba(238, 232, 213, 0.7);
+  }
+
+  .dark .glass {
+    background: rgba(7, 54, 66, 0.7);
+  }
+}
