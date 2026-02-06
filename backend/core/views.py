@@ -75,6 +75,68 @@ class FileUploadView(APIView):
             batch.delete() # Clean up if something crashes
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def get(self, request, *args, **kwargs):
+        # Fetch the last 5 batches
+        recent_batches = UploadBatch.objects.order_by('-uploaded_at')[:5]
+        
+        data = []
+        for batch in recent_batches:
+            data.append({
+                "id": batch.id,
+                "filename": batch.file.name.split('/')[-1], # Clean filename
+                "uploaded_at": batch.uploaded_at,
+                "equipment_count": batch.equipments.count()
+            })
+            
+        return Response(data, status=status.HTTP_200_OK)
+
+class BatchAnalysisView(APIView):
+    def get(self, request, batch_id):
+        try:
+            batch = UploadBatch.objects.get(id=batch_id)
+            
+            # Recalculate or retrieve stats (for now, let's recalculate simply as we don't store stats in DB yet)
+            # In a production app, you'd store stats in a JSONField or similar
+            
+            equipments = batch.equipments.all()
+            total_count = equipments.count()
+            
+            if total_count == 0:
+                 return Response({"error": "Batch is empty"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Simple aggregations
+            # Note: For large datasets, doing this in Python is slow. 
+            # Better to use Django aggregates: .aggregate(Avg('flowrate'), ...)
+            
+            from django.db.models import Avg
+            
+            aggregates = equipments.aggregate(
+                avg_flow=Avg('flowrate'),
+                avg_pressure=Avg('pressure'),
+                avg_temp=Avg('temperature')
+            )
+            
+            type_counts = {}
+            for e in equipments:
+                type_counts[e.equipment_type] = type_counts.get(e.equipment_type, 0) + 1
+            
+            stats = {
+                "total_count": total_count,
+                "average_flowrate": round(aggregates['avg_flow'] or 0, 2),
+                "average_pressure": round(aggregates['avg_pressure'] or 0, 2),
+                "average_temperature": round(aggregates['avg_temp'] or 0, 2),
+                "type_distribution": type_counts
+            }
+            
+            return Response({
+                "batch_id": batch.id,
+                "statistics": stats,
+                "created_at": batch.uploaded_at
+            }, status=status.HTTP_200_OK)
+            
+        except UploadBatch.DoesNotExist:
+            return Response({"error": "Batch not found"}, status=status.HTTP_404_NOT_FOUND)
+
 def generate_pdf(request, batch_id):
     try:
         batch = UploadBatch.objects.get(id=batch_id)
