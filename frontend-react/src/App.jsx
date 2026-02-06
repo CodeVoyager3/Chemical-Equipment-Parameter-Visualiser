@@ -21,7 +21,12 @@ import {
   Sun,
   Moon,
   Beaker,
-  TrendingUp
+  TrendingUp,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  LogOut
 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
@@ -56,11 +61,26 @@ const chartColors = {
   ]
 };
 
+// API Base URL - defined at module scope for use throughout component
+const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 function App() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(true);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // Store auth header for API calls
+  const [authHeader, setAuthHeader] = useState('');
 
   useEffect(() => {
     // Check for saved preference or system preference
@@ -70,6 +90,14 @@ function App() {
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setDarkMode(true);
       document.documentElement.classList.add('dark');
+    }
+
+    // Check for saved auth
+    const savedAuth = localStorage.getItem('authHeader');
+    if (savedAuth) {
+      setAuthHeader(savedAuth);
+      setIsAuthenticated(true);
+      setShowLoginModal(false);
     }
   }, []);
 
@@ -84,6 +112,53 @@ function App() {
     }
   };
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoginLoading(true);
+
+    try {
+      const auth = 'Basic ' + btoa(`${username}:${password}`);
+
+      // Test authentication with an OPTIONS request
+      const response = await axios.options(`${API_BASE}/api/upload/`, {
+        headers: { 'Authorization': auth },
+        timeout: 10000
+      });
+
+      // If we don't get 401, credentials are valid
+      if (response.status !== 401) {
+        setAuthHeader(auth);
+        setIsAuthenticated(true);
+        setShowLoginModal(false);
+        localStorage.setItem('authHeader', auth);
+      }
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setLoginError('Invalid username or password');
+      } else {
+        // Network error or server not responding - allow login anyway
+        const auth = 'Basic ' + btoa(`${username}:${password}`);
+        setAuthHeader(auth);
+        setIsAuthenticated(true);
+        setShowLoginModal(false);
+        localStorage.setItem('authHeader', auth);
+      }
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setShowLoginModal(true);
+    setAuthHeader('');
+    setUsername('');
+    setPassword('');
+    setStats(null);
+    localStorage.removeItem('authHeader');
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -95,17 +170,20 @@ function App() {
     setError('');
 
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
       const response = await axios.post(`${API_BASE}/api/upload/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': 'Basic ' + btoa('admin:password123') // HARDCODED FOR DEMO
+          'Authorization': authHeader
         },
       });
-      // console.log(response);
       setStats(response.data.statistics);
     } catch (err) {
-      setError('Failed to upload file. Make sure Server is running!');
+      if (err.response?.status === 401) {
+        setError('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        setError('Failed to upload file. Make sure Server is running!');
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -114,6 +192,83 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+
+      {/* Login Modal Overlay */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Card className="w-full max-w-md mx-4 shadow-2xl">
+            <CardHeader className="text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <Lock className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl">Welcome Back</CardTitle>
+                <CardDescription>Please enter your credentials to continue</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {loginError && (
+                  <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
+                    {loginError}
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loginLoading}>
+                  {loginLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      Logging in...
+                    </div>
+                  ) : (
+                    'Login'
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -127,14 +282,26 @@ function App() {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleDarkMode}
-            className="rounded-full"
-          >
-            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Logout
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleDarkMode}
+              className="rounded-full"
+            >
+              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       </nav>
 

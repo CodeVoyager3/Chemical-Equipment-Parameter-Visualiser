@@ -42,9 +42,10 @@ class MplCanvas(FigureCanvas):
         self.axes.title.set_color(Theme.FOREGROUND)
 
 class Dashboard(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, api_client=None):
         super().__init__(parent)
-        self.api_client = APIClient()
+        # Use provided api_client or create a new one
+        self.api_client = api_client if api_client else APIClient()
         self.stats = None
         
         # Main Layout (Scrollable)

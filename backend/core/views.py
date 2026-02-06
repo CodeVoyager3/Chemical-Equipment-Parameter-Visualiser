@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas
 
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
+    # Uses global REST_FRAMEWORK settings: BasicAuthentication + IsAuthenticated
 
     def post(self, request, *args, **kwargs):
         file_obj = request.FILES.get('file')
