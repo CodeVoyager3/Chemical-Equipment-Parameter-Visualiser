@@ -145,6 +145,8 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
         });
     };
 
+    const [isRecentUploadsOpen, setIsRecentUploadsOpen] = useState(true);
+
     return (
         <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col">
             {/* Navbar */}
@@ -154,21 +156,18 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary-foreground overflow-hidden">
                             <img src="/image.png" alt="Logo" className="h-8 w-8 object-contain" />
                         </div>
-                        <div>
-                            <h1 className="text-lg font-bold tracking-tight">Chemical Equipments Parameter Visualizer</h1>
-                            <p className="text-xs text-muted-foreground">Process Analytics Dashboard</p>
-                        </div>
+                        <h1 className="text-lg font-bold tracking-tight">Chemical Equipment Analytics Dashboard</h1>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <Button
-                            variant="ghost"
+                            onClick={() => batchId && window.open(`${API_BASE}/api/export-pdf/${batchId}/`, '_blank')}
                             size="sm"
-                            onClick={onLogout}
-                            className="text-muted-foreground hover:text-foreground"
+                            disabled={!batchId}
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
-                            <LogOut className="h-4 w-4 mr-2" />
-                            Logout
+                            <Download className="h-4 w-4 mr-2" />
+                            Export PDF
                         </Button>
                         <Button
                             variant="outline"
@@ -178,166 +177,109 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
                         >
                             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                         </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onLogout}
+                            className="text-muted-foreground hover:text-foreground rounded-full"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
             </nav>
 
+            <main className="container mx-auto py-8 px-4 space-y-6 flex-1">
+                {/* Hero + Upload Section - Side by Side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left: Hero Content */}
+                    <div className="relative overflow-hidden rounded-2xl bg-card p-8 border border-border shadow-lg flex flex-col justify-between">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
 
-
-            <main className="container mx-auto py-8 px-4 space-y-8 flex-1">
-                {/* Hero Section */}
-                <div className="relative overflow-hidden rounded-2xl bg-card p-8 border border-border shadow-lg">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
-
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
-                                <span className="text-sm font-medium text-primary uppercase tracking-wider">Analytics Dashboard</span>
-                            </div>
-                            <h2 className="text-4xl font-bold tracking-tight text-foreground">
-                                Chemical Equipments Parameter Visualization
+                        <div className="relative z-10 space-y-4">
+                            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                                Chemical Equipment Analytics Dashboard
                             </h2>
-                            <p className="text-muted-foreground max-w-lg text-lg leading-relaxed">
-                                Upload your chemical equipment CSV data to visualize flow rates, pressures, and temperatures with interactive charts.
+                            <p className="text-muted-foreground text-base leading-relaxed">
+                                Upload a CSV file to generate summary analytics including total equipment count, average operating values, and equipment type distribution.
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-6 bg-background/50 backdrop-blur-sm p-4 rounded-xl border border-border/50">
-                            <div className="text-center px-4">
-                                <div className="text-3xl font-bold text-primary">{stats?.total_count || '—'}</div>
-                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Units</div>
-                            </div>
-                            <div className="h-10 w-px bg-border" />
-                            <div className="text-center px-4">
-                                <div className="text-3xl font-bold text-blue-500">{stats ? Object.keys(stats.type_distribution).length : '—'}</div>
-                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Types</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    {/* Recent Reports Card */}
-                    <Card className="border-primary/20 bg-card/50 backdrop-blur-sm h-full max-h-[500px] flex flex-col">
-                        <CardHeader className="pb-3 border-b border-border/50">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <Clock className="h-5 w-5 text-primary" />
-                                Recent Reports
-                            </CardTitle>
-                            <CardDescription>Your last 5 analysis runs</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0 flex-1 overflow-y-auto">
-                            {recentUploads.length === 0 ? (
-                                <div className="p-8 text-center text-muted-foreground text-sm">
-                                    No history yet.
-                                    <br />Upload a file to get started.
+                        {/* Last Uploaded Button */}
+                        {recentUploads.length > 0 && (
+                            <button
+                                onClick={() => handleBatchSelect(recentUploads[0].id)}
+                                className="relative z-10 mt-6 flex items-center justify-between p-4 bg-background/50 backdrop-blur-sm rounded-xl border border-border/50 hover:border-primary/50 transition-all group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Database className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-sm text-foreground">Last uploaded: {recentUploads[0].filename}</span>
                                 </div>
-                            ) : (
-                                <div className="divide-y divide-border/50">
-                                    {recentUploads.map((batch) => (
-                                        <button
-                                            key={batch.id}
-                                            onClick={() => handleBatchSelect(batch.id)}
-                                            className={`w-full text-left p-4 transition-all hover:bg-muted/50 group ${batchId === batch.id ? 'bg-primary/5 border-l-2 border-primary' : ''}`}
-                                        >
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="font-medium truncate text-sm text-foreground group-hover:text-primary transition-colors">
-                                                    {batch.filename}
-                                                </span>
-                                                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${batchId === batch.id ? 'translate-x-1 text-primary' : ''}`} />
-                                            </div>
-                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                <div className="flex items-center gap-1">
-                                                    <Calendar className="h-3 w-3" />
-                                                    {formatDate(batch.uploaded_at)}
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <Database className="h-3 w-3" />
-                                                    {batch.equipment_count} items
-                                                </div>
-                                            </div>
-                                        </button>
-                                    ))}
+                                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Right: Upload Section */}
+                    <Card className="border border-border bg-card shadow-lg">
+                        <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-4">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                <Upload className="h-8 w-8 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl mb-2">Upload Equipment Data</CardTitle>
+                                <CardDescription className="text-base">
+                                    Upload CSV to analyze summary statistics
+                                </CardDescription>
+                            </div>
+
+                            <Label
+                                htmlFor="csv_file"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg cursor-pointer transition-colors font-medium"
+                            >
+                                <Upload className="h-4 w-4" />
+                                Browse File
+                            </Label>
+                            <Input
+                                id="csv_file"
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileUpload}
+                                disabled={loading}
+                                className="hidden"
+                            />
+
+                            {recentUploads.length > 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    Last uploaded: {recentUploads[0].filename}
+                                </p>
+                            )}
+
+                            {loading && (
+                                <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg w-full">
+                                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-sm text-primary font-medium">Processing your data...</span>
+                                </div>
+                            )}
+
+                            {error && (
+                                <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20 flex items-center gap-2 w-full">
+                                    <Activity className="h-4 w-4" />
+                                    {error}
                                 </div>
                             )}
                         </CardContent>
                     </Card>
-
-                    {/* Upload Section */}
-                    <div className="lg:col-span-2">
-                        <Card className="w-full h-full border-2 border-dashed border-primary/20 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md bg-card/50 backdrop-blur-sm flex flex-col justify-center">
-                            <CardHeader className="text-center pb-2">
-                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-8 ring-primary/5">
-                                    <Upload className="h-8 w-8 text-primary" />
-                                </div>
-                                <CardTitle className="text-2xl">Upload Equipment Data</CardTitle>
-                                <CardDescription className="text-base">Select a CSV file containing your equipment specifications</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex flex-col items-center gap-4">
-                                    <Label
-                                        htmlFor="csv_file"
-                                        className="flex flex-col items-center gap-2 p-6 border-2 border-dashed border-muted rounded-lg cursor-pointer hover:border-primary/50 transition-colors w-full"
-                                    >
-                                        <Database className="h-8 w-8 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">Click to browse or drag and drop</span>
-                                        <span className="text-xs text-muted-foreground/60">CSV files only</span>
-                                    </Label>
-                                    <Input
-                                        id="csv_file"
-                                        type="file"
-                                        accept=".csv"
-                                        onChange={handleFileUpload}
-                                        disabled={loading}
-                                        className="hidden"
-                                    />
-                                </div>
-
-                                {loading && (
-                                    <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg">
-                                        <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                        <span className="text-sm text-primary font-medium">Processing your data...</span>
-                                    </div>
-                                )}
-
-                                {error && (
-                                    <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20 flex items-center gap-2">
-                                        <Activity className="h-4 w-4" />
-                                        {error}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
                 </div>
 
-                {/* Dashboard Content */}
+                {/* Stats Overview - 4 Cards in a Row */}
                 {stats && (
-                    <div className="space-y-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-500">
-
-                        {/* Stats Header & Actions */}
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-2xl font-bold tracking-tight text-foreground">Analysis Results</h3>
-                                <p className="text-muted-foreground">Real-time equipment telemetry and distribution</p>
-                            </div>
-                            <Button
-                                onClick={() => window.open(`${API_BASE}/api/export-pdf/${batchId}/`, '_blank')}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all duration-300"
-                                disabled={!batchId}
-                            >
-                                <Download className="mr-2 h-4 w-4" />
-                                Download PDF Report
-                            </Button>
-                        </div>
-
-                        {/* Stats Overview */}
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-5 duration-500">
+                        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                             <Card className="group hover-lift border-primary/20">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Equipment</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-primary">Total Equipment</CardTitle>
                                     <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                         <Database className="h-5 w-5 text-primary" />
                                     </div>
@@ -350,7 +292,7 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
 
                             <Card className="group hover-lift border-blue-500/20">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Avg Flowrate</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-blue-500">Avg Flowrate</CardTitle>
                                     <div className="h-9 w-9 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                         <Wind className="h-5 w-5 text-blue-500" />
                                     </div>
@@ -363,7 +305,7 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
 
                             <Card className="group hover-lift border-purple-500/20">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Avg Pressure</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-purple-500">Avg Pressure</CardTitle>
                                     <div className="h-9 w-9 rounded-full bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                         <Gauge className="h-5 w-5 text-purple-500" />
                                     </div>
@@ -376,7 +318,7 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
 
                             <Card className="group hover-lift border-amber-500/20">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Avg Temperature</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-amber-500">Avg Temperature</CardTitle>
                                     <div className="h-9 w-9 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                         <Thermometer className="h-5 w-5 text-amber-500" />
                                     </div>
@@ -388,16 +330,14 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
                             </Card>
                         </div>
 
-                        {/* Charts Section */}
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-
-                            <Card className="lg:col-span-4">
+                        {/* Charts Section - Side by Side */}
+                        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+                            <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <img src="/bar-graph.png" alt="Distribution" className="h-6 w-6 object-contain" />
-                                        Equipment Distribution
+                                        Equipment Count by Type
                                     </CardTitle>
-                                    <CardDescription>Count per equipment type in your dataset</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="h-[320px] w-full">
@@ -446,13 +386,12 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
                                 </CardContent>
                             </Card>
 
-                            <Card className="lg:col-span-3">
+                            <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <img src="/pie-chart.png" alt="Share" className="h-6 w-6 object-contain" />
-                                        Distribution Share
+                                        Equipment Type Share
                                     </CardTitle>
-                                    <CardDescription>Proportion of equipment types</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="h-[320px] flex items-center justify-center">
@@ -472,7 +411,7 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
                                                 maintainAspectRatio: false,
                                                 plugins: {
                                                     legend: {
-                                                        position: 'bottom',
+                                                        position: 'right',
                                                         labels: {
                                                             boxWidth: 12,
                                                             padding: 16,
@@ -489,11 +428,55 @@ const Dashboard = ({ authHeader, onLogout, darkMode, toggleDarkMode }) => {
                     </div>
                 )}
 
+                {/* Recent Uploads - Collapsible Section at Bottom */}
+                <Card className="border-border bg-card/50 backdrop-blur-sm">
+                    <CardHeader
+                        className="cursor-pointer flex flex-row items-center justify-between py-4"
+                        onClick={() => setIsRecentUploadsOpen(!isRecentUploadsOpen)}
+                    >
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                            Recent Uploads
+                            <span className="text-muted-foreground font-normal">(Last 5)</span>
+                        </CardTitle>
+                        <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isRecentUploadsOpen ? 'rotate-90' : ''}`} />
+                    </CardHeader>
+                    {isRecentUploadsOpen && (
+                        <CardContent className="pt-0">
+                            {recentUploads.length === 0 ? (
+                                <div className="py-4 text-center text-muted-foreground text-sm">
+                                    No uploads yet. Upload a file to get started.
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border/50">
+                                    {recentUploads.map((batch) => (
+                                        <button
+                                            key={batch.id}
+                                            onClick={() => handleBatchSelect(batch.id)}
+                                            className={`w-full text-left py-3 px-2 transition-all hover:bg-muted/50 group flex items-center justify-between ${batchId === batch.id ? 'bg-primary/5' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                                <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
+                                                    {batch.filename}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                <span>{formatDate(batch.uploaded_at)}</span>
+                                                <Clock className="h-4 w-4" />
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    )}
+                </Card>
             </main>
 
             {/* Footer */}
             <footer className="text-center py-6 text-sm text-muted-foreground border-t border-border bg-background/50 backdrop-blur-sm">
-                <p>Chemical Equipments Parameter Visualizer • Built with React & Shadcn UI</p>
+                <p>Chemical Equipment Analytics Dashboard • Built with React & Shadcn UI</p>
             </footer>
         </div>
     );

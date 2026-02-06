@@ -39,10 +39,10 @@ const AuthLayout = ({ children, title, subtitle }) => {
 
                     <div className="relative z-10 text-center space-y-2">
                         <h1 className="text-2xl font-bold tracking-tight text-primary">
-                            Chemical Equipments
+                            Chemical Equipment
                         </h1>
                         <p className="text-muted-foreground font-medium text-lg">
-                            Parameter Visualizer
+                            Analytics Dashboard
                         </p>
                     </div>
                 </div>

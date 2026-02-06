@@ -6,7 +6,12 @@ import pandas as pd
 from .models import UploadBatch, ChemicalEquipment
 from .serializers import UploadBatchSerializer
 from django.http import HttpResponse
-from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.enums import TA_CENTER
 
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -146,45 +151,117 @@ def generate_pdf(request, batch_id):
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="batch_{batch_id}_report.pdf"'
 
-        # Create the PDF object, using the response object as its "file."
-        p = canvas.Canvas(response)
+        # Create the PDF document
+        doc = SimpleDocTemplate(response, pagesize=letter,
+                                rightMargin=72, leftMargin=72,
+                                topMargin=72, bottomMargin=18)
         
-        # Draw text on the PDF
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(100, 800, f"Chemical Equipment Report - Batch {batch_id}")
+        # Container for PDF elements
+        elements = []
         
-        p.setFont("Helvetica", 12)
-        p.drawString(100, 780, f"Uploaded at: {batch.uploaded_at.strftime('%Y-%m-%d %H:%M')}")
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#2c3e50'),
+            spaceAfter=12,
+            alignment=TA_CENTER
+        )
         
-        y = 750
-        p.drawString(100, y, "Summary Statistics:")
-        y -= 20
+        # Title
+        title = Paragraph(f"Chemical Equipment Analytics Report", title_style)
+        elements.append(title)
         
-        # Calculate stats (simple version)
+        subtitle = Paragraph(
+            f"<b>Batch ID:</b> {batch_id} | <b>Generated:</b> {batch.uploaded_at.strftime('%Y-%m-%d %H:%M')}",
+            styles['Normal']
+        )
+        elements.append(subtitle)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Calculate statistics
+        from django.db.models import Avg
         total = equipments.count()
-        avg_flow = sum(e.flowrate for e in equipments) / total if total else 0
+        aggregates = equipments.aggregate(
+            avg_flow=Avg('flowrate'),
+            avg_pressure=Avg('pressure'),
+            avg_temp=Avg('temperature')
+        )
         
-        p.drawString(120, y, f"Total Equipment: {total}")
-        p.drawString(120, y-20, f"Avg Flowrate: {round(avg_flow, 2)}")
+        # Summary Statistics Table
+        summary_data = [
+            ['Metric', 'Value'],
+            ['Total Equipment', str(total)],
+            ['Average Flowrate', f"{round(aggregates['avg_flow'] or 0, 2)} m³/hr"],
+            ['Average Pressure', f"{round(aggregates['avg_pressure'] or 0, 2)} Pa"],
+            ['Average Temperature', f"{round(aggregates['avg_temp'] or 0, 2)} °C"],
+        ]
         
-        y -= 60
-        p.drawString(100, y, "Equipment List (First 20 items):")
-        y -= 20
+        summary_table = Table(summary_data, colWidths=[3*inch, 3*inch])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#72e3ad')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
         
-        # List items
-        p.setFont("Courier", 10)
-        for equipment in equipments[:20]: # Limit to 20 for one page demo
-            line = f"{equipment.equipment_name} | {equipment.equipment_type} | Flow: {equipment.flowrate}"
-            p.drawString(100, y, line)
-            y -= 15
-            if y < 50: # New page if full
-                p.showPage()
-                y = 800
-
-        # Close the PDF object cleanly, and we're done.
-        p.showPage()
-        p.save()
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.4*inch))
+        
+        # Equipment List Section
+        equipment_header = Paragraph("<b>Equipment Details</b>", styles['Heading2'])
+        elements.append(equipment_header)
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Limit to first 100 items
+        equipment_limit = 100
+        limited_equipments = equipments[:equipment_limit]
+        
+        # Equipment Table
+        equipment_data = [['Name', 'Type', 'Flowrate', 'Pressure', 'Temperature']]
+        
+        for eq in limited_equipments:
+            equipment_data.append([
+                eq.equipment_name,
+                eq.equipment_type,
+                f"{eq.flowrate}",
+                f"{eq.pressure}",
+                f"{eq.temperature}"
+            ])
+        
+        equipment_table = Table(equipment_data, colWidths=[1.8*inch, 1.2*inch, 1*inch, 1*inch, 1*inch])
+        equipment_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (1, -1), 'LEFT'),  # Name and Type left-aligned
+            ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),  # Numbers right-aligned
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+        ]))
+        
+        elements.append(equipment_table)
+        
+        # Add note if data was limited
+        if total > equipment_limit:
+            elements.append(Spacer(1, 0.2*inch))
+            note = Paragraph(
+                f"<i>Note: Showing first {equipment_limit} of {total} total equipment items.</i>",
+                styles['Normal']
+            )
+            elements.append(note)
+        
+        # Build PDF
+        doc.build(elements)
         return response
-
+        
     except UploadBatch.DoesNotExist:
         return HttpResponse("Batch not found", status=404)
