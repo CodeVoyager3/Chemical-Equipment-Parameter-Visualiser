@@ -71,6 +71,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [batchId, setBatchId] = useState(null);
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -252,6 +253,7 @@ function App() {
         },
       });
       setStats(response.data.statistics);
+      setBatchId(response.data.batch_id);
     } catch (err) {
       if (err.response?.status === 401) {
         setError('Session expired. Please login again.');
@@ -289,8 +291,8 @@ function App() {
                   type="button"
                   onClick={() => { setAuthMode('login'); setLoginError(''); }}
                   className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${authMode === 'login'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Login
@@ -299,8 +301,8 @@ function App() {
                   type="button"
                   onClick={() => { setAuthMode('signup'); setLoginError(''); setSignupSuccess(''); }}
                   className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${authMode === 'signup'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Sign Up
@@ -690,8 +692,9 @@ function App() {
                 </CardContent>
               </Card>
               <button
-                onClick={() => window.open(`${API_BASE}/api/export-pdf/${stats.batch_id}/`, '_blank')}
-                style={{ marginTop: '20px', padding: '10px 20px', background: 'green', color: 'white', border: 'none' }}
+                onClick={() => window.open(`${API_BASE}/api/export-pdf/${batchId}/`, '_blank')}
+                style={{ marginTop: '20px', padding: '10px 20px', background: 'green', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                disabled={!batchId}
               >
                 Download PDF Report
               </button>
