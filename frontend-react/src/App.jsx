@@ -95,14 +95,16 @@ function App() {
     setError('');
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/upload/', formData, {
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const response = await axios.post(`${API_BASE}/api/upload/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      console.log(response);
       setStats(response.data.statistics);
     } catch (err) {
-      setError('Failed to upload file. Make sure Django is running!');
+      setError('Failed to upload file. Make sure Server is running!');
       console.error(err);
     } finally {
       setLoading(false);

@@ -1,0 +1,139 @@
+/* Global Reset */
+* {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    color: #073642; /* FOREGROUND */
+    background-color: transparent;
+    selection-background-color: #d33682; /* PRIMARY */
+    selection-color: #ffffff;
+}
+
+QMainWindow, QWidget#MainContainer {
+    background-color: #fdf6e3; /* BACKGROUND */
+}
+
+/* Sidebar Styling */
+QFrame#Sidebar {
+    background-color: #fdf6e3; /* SIDEBAR_BG */
+    border-right: 1px solid #839496; /* BORDER */
+    min-width: 240px;
+    max-width: 240px;
+}
+
+QLabel#Logo {
+    font-size: 20px;
+    font-weight: bold;
+    color: #073642;
+    padding: 20px;
+}
+
+/* Sidebar Buttons */
+QPushButton[class="SidebarBtn"] {
+    text-align: left;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    color: #586e75; /* SIDEBAR_FG */
+    background-color: transparent;
+    margin: 4px 12px;
+}
+
+QPushButton[class="SidebarBtn"]:hover {
+    background-color: rgba(42, 161, 152, 0.1); 
+    color: #268bd2; /* Hover color */
+}
+
+QPushButton[class="SidebarBtn"]:checked, QPushButton[class="SidebarBtn"][active="true"] {
+    background-color: #2aa198; /* SIDEBAR_ACCENT */
+    color: #ffffff;
+}
+
+/* Main Content Area */
+QWidget#ContentArea {
+    background-color: #fdf6e3;
+}
+
+/* Cards */
+QFrame[class="Card"], #HeroFrame {
+    background-color: #eee8d5; /* CARD */
+    border-radius: 8px;
+    border: 1px solid #839496; /* BORDER */
+}
+
+QLabel[class="CardTitle"] {
+    font-size: 16px;
+    font-weight: bold;
+    color: #073642;
+    background-color: transparent;
+    padding-bottom: 8px;
+}
+
+QLabel[class="CardValue"] {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2aa198; /* SECONDARY */
+    background-color: transparent;
+}
+
+QLabel[class="CardDescription"] {
+    font-size: 12px;
+    color: #93a1a1; /* MUTED */
+    background-color: transparent;
+}
+
+/* Modern Primary Button */
+QPushButton[class="PrimaryBtn"], QPushButton#UploadBtn {
+    background-color: #073642; /* Dark Blue for high contrast */
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: bold;
+    border: 1px solid #073642;
+}
+
+QPushButton[class="PrimaryBtn"]:hover, QPushButton#UploadBtn:hover {
+    background-color: #094b5c; 
+}
+
+QPushButton[class="PrimaryBtn"]:pressed {
+    background-color: #052630;
+}
+
+/* ScrollBars */
+QScrollBar:vertical {
+    border: none;
+    background: #fdf6e3;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #93a1a1;
+    min-height: 20px;
+    border-radius: 5px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+}
+
+/* Message Box Styling */
+QMessageBox {
+    background-color: #fdf6e3;
+}
+
+QMessageBox QLabel {
+    color: #073642;
+    font-size: 14px;
+}
+
+QMessageBox QPushButton {
+    background-color: #073642;
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 6px 16px;
+    min-width: 60px;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #094b5c;
+}
